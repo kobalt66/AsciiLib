@@ -59,47 +59,54 @@ def draw_rect_on_top(x, y, w, h, array, char='#'):
 def draw_line_on_top(x1, y1, x2, y2, array, char='#'):
     dx = x2 - x1
     dy = y2 - y1
-    
+
     steps = 0
     if abs(dx) > abs(dy):
         steps = abs(dx)
     else:
         steps = abs(dy)
-    
+
     if steps == 0:
         xinc = 0
         yinc = 0
     else:
         xinc = dx / steps
         yinc = dy / steps
-    
-    
+
     for i in range(steps):
-        x = floor(x1 + xinc * i) 
+        x = floor(x1 + xinc * i)
         y = floor(y1 + yinc * i)
-        
+
         idx = x + y * window_w
         if idx < len(array) and idx > -1 and x < window_w and x > -1:
             array[idx] = char
-    
+
     return array
 
 
 def draw_circle_on_top(x, y, r, steps, array, char='#'):
     angle = pi * 2 / steps
-    
+
     prevX = x
     prevY = y - r
-    for i in range(steps):
+    for i in range(steps + 1):
         I = 1 if i < 1 else I
         newX = x + floor(r * sin(angle * i))
         newY = y + floor(-r * cos(angle * i))
-        
+
         array = draw_line_on_top(prevX, prevY, newX, newY, array, char)
-        
+
         prevX = newX
         prevY = newY
-        
+
+    return array
+
+@njit
+def draw_triangle_on_top(x1, y1, x2, y2, x3, y3, array, char='#'):
+    array = draw_line_on_top(x1, y1, x2, y2, array, char)
+    array = draw_line_on_top(x2, y2, x3, y3, array, char)
+    array = draw_line_on_top(x3, y3, x1, y1, array, char)
+    
     return array
 
 
@@ -114,6 +121,7 @@ def create_screen_buffer(array):
         buffer += array[idx] + ' '
 
     return buffer
+
 
 def draw(array):
     if not window_initialized:
@@ -132,7 +140,7 @@ def check_input():
         run_AsciiLib = False
     if is_pressed('+'):
         window_invoke_manual_update = True
-    
+
     # Player Input
     if is_pressed('up'):
         y -= 1
@@ -146,7 +154,7 @@ def check_input():
 ###########################################################################################################################################################################
 
 
-init(100, 55, ' ', .01)
+init(50, 25, ' ', .01)
 screen_buffer_array = init_screen_buffer()
 system('CLS')
 
@@ -157,17 +165,18 @@ while run_AsciiLib:
     if window_manual_update:
         check_input()
         sleep(.1)
-        
+
         if window_invoke_manual_update:
             window_invoke_manual_update = False
         else:
             continue
-    
+
     # Drawing stuff
     screen_buffer_array = init_screen_buffer()
     #screen_buffer_array = draw_rect_on_top(x, y, 2, 2, screen_buffer_array, '@')
     #screen_buffer_array = draw_line_on_top(20, 20, x, y, screen_buffer_array, 'x')
-    screen_buffer_array = draw_circle_on_top(10 + x, 10 + y, 20, 20, screen_buffer_array)
+    #screen_buffer_array = draw_circle_on_top(10 + x, 10 + y, 50, 50, screen_buffer_array)
+    screen_buffer_array = draw_triangle_on_top(0 + x, 10 + y, 10 + x, 0 + y, 0 + x, 0 + y, screen_buffer_array, '@')
     screen_buffer_array = draw_line_on_top(0, 0, window_w, 0, screen_buffer_array, 'X')
     screen_buffer_array = draw_line_on_top(0, 0, 0, window_h - 1, screen_buffer_array, 'X')
     screen_buffer_array = draw_line_on_top(window_w - 1, 0, window_w, window_h - 1, screen_buffer_array, 'X')
