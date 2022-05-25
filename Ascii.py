@@ -128,7 +128,7 @@ def check_input():
 ###########################################################################################################################################################################
 
 
-init(75, 25, '.', .01)
+init(50, 25, ' ', .01)
 screen_buffer_array = init_screen_buffer()
 system('CLS')
 
@@ -148,6 +148,10 @@ while run_AsciiLib:
     screen_buffer_array = init_screen_buffer()
     screen_buffer_array = draw_rect_on_top(x, y, 2, 2, screen_buffer_array, '@')
     screen_buffer_array = draw_line_on_top(20, 20, x, y, screen_buffer_array, 'x')
+    screen_buffer_array = draw_line_on_top(0, 0, window_w, 0, screen_buffer_array, 'X')
+    screen_buffer_array = draw_line_on_top(0, 0, 0, window_h - 1, screen_buffer_array, 'X')
+    screen_buffer_array = draw_line_on_top(window_w - 1, 0, window_w, window_h - 1, screen_buffer_array, 'X')
+    screen_buffer_array = draw_line_on_top(0, window_h - 1, window_w, window_h - 1, screen_buffer_array, 'X')
     screen_buffer = draw(screen_buffer_array)
 
     system('CLS')
