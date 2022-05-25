@@ -1,4 +1,5 @@
-from math import floor
+from math import cos, floor, sin, pi
+from multiprocessing.spawn import old_main_modules
 from numba import njit
 from numba.typed import List
 from keyboard import is_pressed
@@ -84,6 +85,24 @@ def draw_line_on_top(x1, y1, x2, y2, array, char='#'):
     return array
 
 
+def draw_circle_on_top(x, y, r, steps, array, char='#'):
+    angle = pi * 2 / steps
+    
+    prevX = x
+    prevY = y - r
+    for i in range(steps):
+        I = 1 if i < 1 else I
+        newX = x + floor(r * sin(angle * i))
+        newY = y + floor(-r * cos(angle * i))
+        
+        array = draw_line_on_top(prevX, prevY, newX, newY, array, char)
+        
+        prevX = newX
+        prevY = newY
+        
+    return array
+
+
 @njit
 def create_screen_buffer(array):
     buffer = ''
@@ -95,7 +114,6 @@ def create_screen_buffer(array):
         buffer += array[idx] + ' '
 
     return buffer
-
 
 def draw(array):
     if not window_initialized:
@@ -128,12 +146,13 @@ def check_input():
 ###########################################################################################################################################################################
 
 
-init(50, 25, ' ', .01)
+init(100, 55, ' ', .01)
 screen_buffer_array = init_screen_buffer()
 system('CLS')
 
 x = 10
 y = 10
+
 while run_AsciiLib:
     if window_manual_update:
         check_input()
@@ -146,8 +165,9 @@ while run_AsciiLib:
     
     # Drawing stuff
     screen_buffer_array = init_screen_buffer()
-    screen_buffer_array = draw_rect_on_top(x, y, 2, 2, screen_buffer_array, '@')
-    screen_buffer_array = draw_line_on_top(20, 20, x, y, screen_buffer_array, 'x')
+    #screen_buffer_array = draw_rect_on_top(x, y, 2, 2, screen_buffer_array, '@')
+    #screen_buffer_array = draw_line_on_top(20, 20, x, y, screen_buffer_array, 'x')
+    screen_buffer_array = draw_circle_on_top(10 + x, 10 + y, 20, 20, screen_buffer_array)
     screen_buffer_array = draw_line_on_top(0, 0, window_w, 0, screen_buffer_array, 'X')
     screen_buffer_array = draw_line_on_top(0, 0, 0, window_h - 1, screen_buffer_array, 'X')
     screen_buffer_array = draw_line_on_top(window_w - 1, 0, window_w, window_h - 1, screen_buffer_array, 'X')
