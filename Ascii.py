@@ -109,7 +109,8 @@ while run_AsciiLib:
     # Drawing stuff
     screen_buffer_array = init_screen_buffer()
     screen_buffer_array = draw_rect_on_top(x, y, 15, 5, screen_buffer_array)
-    screen_buffer_array = draw_line_on_top(20, 20, 30, 30, screen_buffer_array)
+    screen_buffer_array = draw_rect_on_top(-x, -y, 5, 5, screen_buffer_array, '@')
+    screen_buffer_array = draw_line_on_top(20, 20, 30, 30, screen_buffer_array, '@')
     screen_buffer = draw(screen_buffer_array)
 
     system('CLS')
