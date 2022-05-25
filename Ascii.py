@@ -1,11 +1,11 @@
 from math import cos, floor, sin, pi
-from multiprocessing.spawn import old_main_modules
+from turtle import position
 from numba import njit
 from numba.typed import List
 from keyboard import is_pressed
 from time import sleep
 from os import system
-from sys import stdout
+import pyautogui
 
 run_AsciiLib = True
 window_initialized = False
@@ -15,6 +15,8 @@ window_border_char = ''
 window_name = ''
 window_manual_update = False
 window_invoke_manual_update = False
+mouseX = 0
+mouseY = 0
 fps = 0
 
 
@@ -150,9 +152,19 @@ def check_input():
         x -= 1
     if is_pressed('right'):
         x += 1
+        
 
 ###########################################################################################################################################################################
 
+def math_gen_transformation_matrix():
+    pass
+
+def math_gen_rotation_matrix():
+    pass
+
+
+
+###########################################################################################################################################################################
 
 init(50, 25, ' ', .01)
 screen_buffer_array = init_screen_buffer()
@@ -176,7 +188,8 @@ while run_AsciiLib:
     #screen_buffer_array = draw_rect_on_top(x, y, 2, 2, screen_buffer_array, '@')
     #screen_buffer_array = draw_line_on_top(20, 20, x, y, screen_buffer_array, 'x')
     #screen_buffer_array = draw_circle_on_top(10 + x, 10 + y, 50, 50, screen_buffer_array)
-    screen_buffer_array = draw_triangle_on_top(0 + x, 10 + y, 10 + x, 0 + y, 0 + x, 0 + y, screen_buffer_array, '@')
+    #screen_buffer_array = draw_triangle_on_top(0 + x, 10 + y, 10 + x, 0 + y, 0 + x, 0 + y, screen_buffer_array, '@')
+    screen_buffer_array = draw_line_on_top(floor(window_w / 2), floor(window_h / 2), floor(mouseX / window_w), floor(mouseY / window_h), screen_buffer_array, 'e')
     screen_buffer_array = draw_line_on_top(0, 0, window_w, 0, screen_buffer_array, 'X')
     screen_buffer_array = draw_line_on_top(0, 0, 0, window_h - 1, screen_buffer_array, 'X')
     screen_buffer_array = draw_line_on_top(window_w - 1, 0, window_w, window_h - 1, screen_buffer_array, 'X')
@@ -187,6 +200,9 @@ while run_AsciiLib:
     print(screen_buffer)
 
     # Other stuff
+    mouseX = pyautogui.position().x
+    mouseY = pyautogui.position().y
+    
     if not window_manual_update:
         sleep(fps)
         check_input()
