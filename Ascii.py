@@ -148,7 +148,7 @@ def draw_box_on_top(vec1, vec2, vec3, vec4, array, char='#'):
 
 
 @njit
-def draw_model_on_top(vec, model, array):
+def draw_model_whitespace(vec, model, array):
     x = vec.x
     y = vec.y
     
@@ -157,6 +157,21 @@ def draw_model_on_top(vec, model, array):
             idx = (x + j) + ((y + i) * window_w)
             if idx < len(array) and idx > -1 and x + j < window_w and x + j > -1:
                 array[idx] = model.data[j + i * model.w]
+
+    return array
+
+@njit
+def draw_model_no_whitespace(vec, model, array):
+    x = vec.x
+    y = vec.y
+    
+    for i in range(model.h):
+        for j in range(model.w):
+            idx = (x + j) + ((y + i) * window_w)
+            char = model.data[j + i * model.w]
+            if not char == ' ':
+                if idx < len(array) and idx > -1 and x + j < window_w and x + j > -1:
+                    array[idx] = char
 
     return array
 
@@ -333,7 +348,7 @@ while run_AsciiLib:
     # p2 = p2.add(Vec2(x, y))
     # p2 = p2.add(Vec2(x, y))
     # screen_buffer_array = draw_triangle_on_top(p1, p2, p3, screen_buffer_array, '@')
-    screen_buffer_array = draw_model_on_top(Vec2(30, 10), model, screen_buffer_array)
+    screen_buffer_array = draw_model_whitespace(Vec2(30, 10), model, screen_buffer_array)
     screen_buffer_array = draw_box_on_top(Vec2(10, 10), Vec2(20, 10), Vec2(20, 20), Vec2(10, 20), screen_buffer_array)
     screen_buffer_array = draw_screen_borders_on_top(screen_buffer_array, '▧')
     screen_buffer = draw(screen_buffer_array)
