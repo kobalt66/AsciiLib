@@ -3,7 +3,7 @@ from numba import njit, int32, types
 from numba.experimental import jitclass
 from numba.typed import List
 from keyboard import is_pressed
-from time import sleep
+from time import sleep, time
 from os import system
 import pyautogui
 
@@ -39,7 +39,6 @@ def init(width, height, default_char, frame_rate, manual_update=False, name='Def
     window_initialized = True
 
     print(f"Successfully initialized the Window: '{window_name}'")
-    sleep(3)
 
 
 def init_functions(loop, input):
@@ -316,7 +315,9 @@ def run():
     system('CLS')
     
     # The main loop
+    frame_time_start = time()
     while run_AsciiLib:
+        # If debugging frame by frame
         if window_manual_update:
             check_input()
             sleep(.1)
@@ -326,18 +327,20 @@ def run():
             else:
                 continue
 
-        if loop_func:
+        # Drawing functions
+        frame_time_end = time()
+        if loop_func and frame_time_end - frame_time_start >= fps:
             screen_buffer = loop_func()
-
-        system('CLS')
-        print(screen_buffer)
+            
+            system('CLS')
+            print(screen_buffer)
+            frame_time_start = time()
 
         # Other stuff
         mouseX = pyautogui.position().x
         mouseY = pyautogui.position().y
         
         if not window_manual_update:
-            sleep(fps)
             check_input()
 
     system('CLS')

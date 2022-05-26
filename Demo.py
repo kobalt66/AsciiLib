@@ -55,6 +55,6 @@ def input():
     if is_pressed('right'):
         x += 1
 
-init(100, 50, ' ', .01)
+init(100, 50, ' ', 1)
 init_functions(loop, input)
 run()
