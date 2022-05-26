@@ -11,7 +11,7 @@ run_AsciiLib = True
 window_initialized = False
 window_w = 0
 window_h = 0
-window_border_char = ''
+window_default_char = ''
 window_name = ''
 window_manual_update = False
 window_invoke_manual_update = False
@@ -19,17 +19,20 @@ mouseX = 0
 mouseY = 0
 fps = 0
 
+loop_func = None
+input_func = None
+
 
 ascii_special_chars = "๑•ิ.•ั๑ ๑๑ ♬✿.｡.:* ★ ☆ εїз℡❣·۰•●○●ōゃ ♥ ♡๑ﺴ ☜ ☞ ☎ ☏♡ ⊙◎ ☺ ☻✖╄ஐﻬ ► ◄ ▧ ▨ ♨ ◐ ◑ ↔ ↕ ▪ ▫ ☼ ♦ ▀ ▄ █▌ ▐░ ▒ ▬♦ ◊ ◦ ☼ ♠♣ ▣ ▤ ▥ ▦ ▩ ◘ ◙ ◈ ♫ ♬ ♪ ♩ ♭ ♪ の ☆"
 
 
 # Init window
-def init(width, height, border_char, frame_rate, manual_update=False, name='Default'):
-    global window_w, window_h, window_border_char, window_name, window_initialized, window_manual_update, fps
+def init(width, height, default_char, frame_rate, manual_update=False, name='Default'):
+    global window_w, window_h, window_default_char, window_name, window_initialized, window_manual_update, fps
 
     window_w = width
     window_h = height
-    window_border_char = border_char
+    window_default_char = default_char
     window_name = name
     window_manual_update = manual_update
     fps = frame_rate
@@ -39,17 +42,25 @@ def init(width, height, border_char, frame_rate, manual_update=False, name='Defa
     sleep(3)
 
 
+def init_functions(loop, input):
+    global loop_func, input_func
+    loop_func = loop
+    input_func = input
+    
+
 # Init "screen_buffer_array"
 def init_screen_buffer():
     array = List()
 
     for y in range(window_h):
         for x in range(window_w):
-            array.append(window_border_char)
+            array.append(window_default_char)
 
     return array
 
+
 ###########################################################################################################################################################################
+
 
 @njit
 def draw_rect_on_top(vec, w, h, array, char='#'):
@@ -183,6 +194,7 @@ def draw_text_on_top(vec, text, array):
 
 ###########################################################################################################################################################################
 
+
 @njit
 def create_screen_buffer(array):
     buffer = ''
@@ -207,25 +219,19 @@ def draw(array):
 
 
 def check_input():
-    global run_AsciiLib, window_invoke_manual_update, y, x
+    global run_AsciiLib, window_invoke_manual_update
     if is_pressed('esc'):
         print("Shutting down AsciiLib.py")
         run_AsciiLib = False
     if is_pressed('+'):
         window_invoke_manual_update = True
 
-    # Player Input
-    if is_pressed('up'):
-        y -= 1
-    if is_pressed('down'):
-        y += 1
-    if is_pressed('left'):
-        x -= 1
-    if is_pressed('right'):
-        x += 1
+    if input_func:
+        input_func()
         
 
 ###########################################################################################################################################################################
+
 
 _Vec2 = [ ('x', int32), ('y', int32) ]
 @jitclass(_Vec2)
@@ -283,9 +289,11 @@ class Model:
         for i in range(len(array)):
             final_data += array[i]
         
-        print(self.w)
-        print(self.h)
         self.data = final_data
+
+
+###########################################################################################################################################################################
+
 
 def math_gen_transformation_matrix():
     pass
@@ -301,68 +309,36 @@ def math_rotation_point(vec, r):
 
 ###########################################################################################################################################################################
 
-init(100, 50, ' ', .01)
-screen_buffer_array = init_screen_buffer()
-system('CLS')
 
-x = 10
-y = 10
-
-p1 = Vec2(10, 20)
-p2 = Vec2(20, 10)
-p3 = Vec2(10, 10)
-
-model_data = '''############  ###
-#               #
-#               #
-#____           #
-#    a          #
-#################'''
-
-model = Model(model_data)
-
-while run_AsciiLib:
-    if window_manual_update:
-        check_input()
-        sleep(.1)
-
-        if window_invoke_manual_update:
-            window_invoke_manual_update = False
-        else:
-            continue
-
-    # Drawing stuff
+def run():
+    global screen_buffer_array, mouseX, mouseY
     screen_buffer_array = init_screen_buffer()
-    #screen_buffer_array = draw_rect_on_top(Vec2(x, y), 1, 1, screen_buffer_array, '☻')
-    #screen_buffer_array = draw_line_on_top(Vec2(20, 20), Vec2(x, y), screen_buffer_array, '●')
-    #screen_buffer_array = draw_circle_on_top(Vec2(10 + x, 10 + y), 50, 50, screen_buffer_array)
-    #screen_buffer_array = draw_triangle_on_top(Vec2(0 + x, 10 + y), Vec2(10 + x, 0 + y), Vec2(0 + x, 0 + y), screen_buffer_array, '@')
-    #screen_buffer_array = draw_line_on_top(Vec2(floor(window_w / 2), floor(window_h / 2)), Vec2(floor(mouseX / window_w), floor(mouseY / window_h)), screen_buffer_array, 'e')
+    system('CLS')
     
-    
-    # Not working yet...
-    # p1 = math_rotation_point(p1, 0.1)
-    # p2 = math_rotation_point(p2, 0.1)
-    # p3 = math_rotation_point(p3, 0.1)
-    # p1 = p1.add(Vec2(x, y))
-    # p2 = p2.add(Vec2(x, y))
-    # p2 = p2.add(Vec2(x, y))
-    # screen_buffer_array = draw_triangle_on_top(p1, p2, p3, screen_buffer_array, '@')
-    screen_buffer_array = draw_model_whitespace(Vec2(30, 10), model, screen_buffer_array)
-    screen_buffer_array = draw_box_on_top(Vec2(10, 10), Vec2(20, 10), Vec2(20, 20), Vec2(10, 20), screen_buffer_array)
-    screen_buffer_array = draw_screen_borders_on_top(screen_buffer_array, '▧')
-    screen_buffer = draw(screen_buffer_array)
+    # The main loop
+    while run_AsciiLib:
+        if window_manual_update:
+            check_input()
+            sleep(.1)
+
+            if window_invoke_manual_update:
+                window_invoke_manual_update = False
+            else:
+                continue
+
+        if loop_func:
+            screen_buffer = loop_func()
+
+        system('CLS')
+        print(screen_buffer)
+
+        # Other stuff
+        mouseX = pyautogui.position().x
+        mouseY = pyautogui.position().y
+        
+        if not window_manual_update:
+            sleep(fps)
+            check_input()
 
     system('CLS')
-    print(screen_buffer)
-
-    # Other stuff
-    mouseX = pyautogui.position().x
-    mouseY = pyautogui.position().y
-    
-    if not window_manual_update:
-        sleep(fps)
-        check_input()
-
-system('CLS')
-print("Thanks for using AsciiLib :)")
+    print("Thanks for using AsciiLib :)")
