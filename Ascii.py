@@ -1,5 +1,5 @@
 from math import cos, floor, sin, pi, sqrt
-from numba import njit, int32
+from numba import njit, int32, types
 from numba.experimental import jitclass
 from numba.typed import List
 from keyboard import is_pressed
@@ -19,6 +19,8 @@ mouseX = 0
 mouseY = 0
 fps = 0
 
+
+ascii_special_chars = "๑•ิ.•ั๑ ๑๑ ♬✿.｡.:* ★ ☆ εїз℡❣·۰•●○●ōゃ ♥ ♡๑ﺴ ☜ ☞ ☎ ☏♡ ⊙◎ ☺ ☻✖╄ஐﻬ ► ◄ ▧ ▨ ♨ ◐ ◑ ↔ ↕ ▪ ▫ ☼ ♦ ▀ ▄ █▌ ▐░ ▒ ▬♦ ◊ ◦ ☼ ♠♣ ▣ ▤ ▥ ▦ ▩ ◘ ◙ ◈ ♫ ♬ ♪ ♩ ♭ ♪ の ☆"
 
 
 # Init window
@@ -117,12 +119,50 @@ def draw_circle_on_top(vec, r, steps, array, char='#'):
 
     return array
 
+
 @njit
 def draw_triangle_on_top(vec1, vec2, vec3, array, char='#'):
     array = draw_line_on_top(vec1, vec2, array, char)
     array = draw_line_on_top(vec2, vec3, array, char)
     array = draw_line_on_top(vec3, vec1, array, char)
     
+    return array
+
+
+@njit
+def draw_screen_borders_on_top(array, char='X'):
+    array = draw_line_on_top(Vec2(0, 0),            Vec2(window_w, 0),            array, char)
+    array = draw_line_on_top(Vec2(0, 0),            Vec2(0, window_h - 1),        array, char)
+    array = draw_line_on_top(Vec2(window_w - 1, 0), Vec2(window_w, window_h - 1), array, char)
+    array = draw_line_on_top(Vec2(0, window_h - 1), Vec2(window_w, window_h - 1), array, char)
+    return array
+
+
+@njit
+def draw_box_on_top(vec1, vec2, vec3, vec4, array, char='#'):
+    array = draw_line_on_top(vec1, vec2, array, char)
+    array = draw_line_on_top(vec2, vec3, array, char)
+    array = draw_line_on_top(vec3, vec4, array, char)
+    array = draw_line_on_top(vec4, vec1, array, char)
+    return array
+
+
+@njit
+def draw_model_on_top(vec, model, array):
+    x = vec.x
+    y = vec.y
+    
+    for i in range(model.h):
+        for j in range(model.w):
+            idx = (x + j) + ((y + i) * window_w)
+            if idx < len(array) and idx > -1 and x + j < window_w and x + j > -1:
+                array[idx] = model.data[j + i * model.w]
+
+    return array
+
+
+@njit
+def draw_text_on_top(vec, text, array):
     return array
 
 
@@ -172,8 +212,8 @@ def check_input():
 
 ###########################################################################################################################################################################
 
-spec = [ ('x', int32), ('y', int32) ]
-@jitclass(spec)
+_Vec2 = [ ('x', int32), ('y', int32) ]
+@jitclass(_Vec2)
 class Vec2:
     def __init__(self, x=0, y=0):
         self.x = x
@@ -216,10 +256,29 @@ class Vec2:
         return newVec
 
 
+_Model = [ ('w', int32), ('h', int32), ('data', types.string) ]
+@jitclass(_Model)
+class Model:
+    def __init__(self, data):
+        array = data.split('\n')
+        self.w = len(array[0])
+        self.h = len(array)
+        
+        final_data = ''
+        for i in range(len(array)):
+            final_data += array[i]
+        
+        print(self.w)
+        print(self.h)
+        self.data = final_data
+
 def math_gen_transformation_matrix():
     pass
 
-def math_rotation_point(x0, y0, r):
+def math_rotation_point(vec, r):
+    x0 = vec.x
+    y0 = vec.y
+    
     x1 = x0 * cos(r) + y0 * -sin(r)
     y1 = x0 * sin(r) + y0 *  cos(r)
     return Vec2(x1, y1)
@@ -234,6 +293,19 @@ system('CLS')
 x = 10
 y = 10
 
+p1 = Vec2(10, 20)
+p2 = Vec2(20, 10)
+p3 = Vec2(10, 10)
+
+model_data = '''############  ###
+#               #
+#               #
+#____           #
+#    a          #
+#################'''
+
+model = Model(model_data)
+
 while run_AsciiLib:
     if window_manual_update:
         check_input()
@@ -246,15 +318,24 @@ while run_AsciiLib:
 
     # Drawing stuff
     screen_buffer_array = init_screen_buffer()
-    #screen_buffer_array = draw_rect_on_top(x, y, 2, 2, screen_buffer_array, '@')
-    #screen_buffer_array = draw_line_on_top(20, 20, x, y, screen_buffer_array, 'x')
-    screen_buffer_array = draw_circle_on_top(Vec2(10 + x, 10 + y), 50, 50, screen_buffer_array)
+    #screen_buffer_array = draw_rect_on_top(Vec2(x, y), 1, 1, screen_buffer_array, '☻')
+    #screen_buffer_array = draw_line_on_top(Vec2(20, 20), Vec2(x, y), screen_buffer_array, '●')
+    #screen_buffer_array = draw_circle_on_top(Vec2(10 + x, 10 + y), 50, 50, screen_buffer_array)
     #screen_buffer_array = draw_triangle_on_top(Vec2(0 + x, 10 + y), Vec2(10 + x, 0 + y), Vec2(0 + x, 0 + y), screen_buffer_array, '@')
     #screen_buffer_array = draw_line_on_top(Vec2(floor(window_w / 2), floor(window_h / 2)), Vec2(floor(mouseX / window_w), floor(mouseY / window_h)), screen_buffer_array, 'e')
-    screen_buffer_array = draw_line_on_top(Vec2(0, 0),            Vec2(window_w, 0), screen_buffer_array, 'X')
-    screen_buffer_array = draw_line_on_top(Vec2(0, 0),            Vec2(0, window_h - 1), screen_buffer_array, 'X')
-    screen_buffer_array = draw_line_on_top(Vec2(window_w - 1, 0), Vec2(window_w, window_h - 1), screen_buffer_array, 'X')
-    screen_buffer_array = draw_line_on_top(Vec2(0, window_h - 1), Vec2(window_w, window_h - 1), screen_buffer_array, 'X')
+    
+    
+    # Not working yet...
+    # p1 = math_rotation_point(p1, 0.1)
+    # p2 = math_rotation_point(p2, 0.1)
+    # p3 = math_rotation_point(p3, 0.1)
+    # p1 = p1.add(Vec2(x, y))
+    # p2 = p2.add(Vec2(x, y))
+    # p2 = p2.add(Vec2(x, y))
+    # screen_buffer_array = draw_triangle_on_top(p1, p2, p3, screen_buffer_array, '@')
+    screen_buffer_array = draw_model_on_top(Vec2(30, 10), model, screen_buffer_array)
+    screen_buffer_array = draw_box_on_top(Vec2(10, 10), Vec2(20, 10), Vec2(20, 20), Vec2(10, 20), screen_buffer_array)
+    screen_buffer_array = draw_screen_borders_on_top(screen_buffer_array, '▧')
     screen_buffer = draw(screen_buffer_array)
 
     system('CLS')
