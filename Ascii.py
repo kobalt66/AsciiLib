@@ -1,6 +1,6 @@
-from math import cos, floor, sin, pi
-from turtle import position
-from numba import njit
+from math import cos, floor, sin, pi, sqrt
+from numba import njit, int32
+from numba.experimental import jitclass
 from numba.typed import List
 from keyboard import is_pressed
 from time import sleep
@@ -20,6 +20,7 @@ mouseY = 0
 fps = 0
 
 
+
 # Init window
 def init(width, height, border_char, frame_rate, manual_update=False, name='Default'):
     global window_w, window_h, window_border_char, window_name, window_initialized, window_manual_update, fps
@@ -33,9 +34,10 @@ def init(width, height, border_char, frame_rate, manual_update=False, name='Defa
     window_initialized = True
 
     print(f"Successfully initialized the Window: '{window_name}'")
+    sleep(3)
 
 
-# Init screen_buffer_array
+# Init "screen_buffer_array"
 def init_screen_buffer():
     array = List()
 
@@ -45,9 +47,13 @@ def init_screen_buffer():
 
     return array
 
+###########################################################################################################################################################################
 
 @njit
-def draw_rect_on_top(x, y, w, h, array, char='#'):
+def draw_rect_on_top(vec, w, h, array, char='#'):
+    x = vec.x
+    y = vec.y
+    
     for i in range(h):
         for j in range(w):
             idx = (x + j) + ((y + i) * window_w)
@@ -58,7 +64,12 @@ def draw_rect_on_top(x, y, w, h, array, char='#'):
 
 
 @njit
-def draw_line_on_top(x1, y1, x2, y2, array, char='#'):
+def draw_line_on_top(vec1, vec2, array, char='#'):
+    x1 = vec1.x
+    y1 = vec1.y
+    x2 = vec2.x
+    y2 = vec2.y
+    
     dx = x2 - x1
     dy = y2 - y1
 
@@ -86,8 +97,11 @@ def draw_line_on_top(x1, y1, x2, y2, array, char='#'):
     return array
 
 
-def draw_circle_on_top(x, y, r, steps, array, char='#'):
+def draw_circle_on_top(vec, r, steps, array, char='#'):
     angle = pi * 2 / steps
+
+    x = vec.x
+    y = vec.y
 
     prevX = x
     prevY = y - r
@@ -96,7 +110,7 @@ def draw_circle_on_top(x, y, r, steps, array, char='#'):
         newX = x + floor(r * sin(angle * i))
         newY = y + floor(-r * cos(angle * i))
 
-        array = draw_line_on_top(prevX, prevY, newX, newY, array, char)
+        array = draw_line_on_top(Vec2(prevX, prevY), Vec2(newX, newY), array, char)
 
         prevX = newX
         prevY = newY
@@ -104,13 +118,15 @@ def draw_circle_on_top(x, y, r, steps, array, char='#'):
     return array
 
 @njit
-def draw_triangle_on_top(x1, y1, x2, y2, x3, y3, array, char='#'):
-    array = draw_line_on_top(x1, y1, x2, y2, array, char)
-    array = draw_line_on_top(x2, y2, x3, y3, array, char)
-    array = draw_line_on_top(x3, y3, x1, y1, array, char)
+def draw_triangle_on_top(vec1, vec2, vec3, array, char='#'):
+    array = draw_line_on_top(vec1, vec2, array, char)
+    array = draw_line_on_top(vec2, vec3, array, char)
+    array = draw_line_on_top(vec3, vec1, array, char)
     
     return array
 
+
+###########################################################################################################################################################################
 
 @njit
 def create_screen_buffer(array):
@@ -156,17 +172,62 @@ def check_input():
 
 ###########################################################################################################################################################################
 
+spec = [ ('x', int32), ('y', int32) ]
+@jitclass(spec)
+class Vec2:
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
+        
+    def add(self, vec2):
+        newVec = self
+        newVec.x += vec2.x
+        newVec.y += vec2.y
+        return newVec
+        
+    def sub(self, vec2):
+        newVec = self
+        newVec.x -= vec2.x
+        newVec.y -= vec2.y
+        return newVec
+    
+    def mul(self, vec2):
+        return self.x * vec2.x + self.y * vec2.y
+    
+    def mul(self, n):
+        newVec = self
+        newVec.x *= n
+        newVec.y *= n
+        return newVec
+    
+    def div(self, n):
+        newVec = self
+        newVec.x /= n
+        newVec.y /= n
+        return newVec
+    
+    def mag(self):
+        return sqrt(pow(self.x, 2) + pow(self.y, 2))
+    
+    def norm(self):
+        newVec = self
+        newVec.x /= self.mag()
+        newVec.y /= self.mag()
+        return newVec
+
+
 def math_gen_transformation_matrix():
     pass
 
-def math_gen_rotation_matrix():
-    pass
-
-
+def math_rotation_point(x0, y0, r):
+    x1 = x0 * cos(r) + y0 * -sin(r)
+    y1 = x0 * sin(r) + y0 *  cos(r)
+    return Vec2(x1, y1)
+    
 
 ###########################################################################################################################################################################
 
-init(50, 25, ' ', .01)
+init(100, 50, ' ', .01)
 screen_buffer_array = init_screen_buffer()
 system('CLS')
 
@@ -187,13 +248,13 @@ while run_AsciiLib:
     screen_buffer_array = init_screen_buffer()
     #screen_buffer_array = draw_rect_on_top(x, y, 2, 2, screen_buffer_array, '@')
     #screen_buffer_array = draw_line_on_top(20, 20, x, y, screen_buffer_array, 'x')
-    #screen_buffer_array = draw_circle_on_top(10 + x, 10 + y, 50, 50, screen_buffer_array)
-    #screen_buffer_array = draw_triangle_on_top(0 + x, 10 + y, 10 + x, 0 + y, 0 + x, 0 + y, screen_buffer_array, '@')
-    screen_buffer_array = draw_line_on_top(floor(window_w / 2), floor(window_h / 2), floor(mouseX / window_w), floor(mouseY / window_h), screen_buffer_array, 'e')
-    screen_buffer_array = draw_line_on_top(0, 0, window_w, 0, screen_buffer_array, 'X')
-    screen_buffer_array = draw_line_on_top(0, 0, 0, window_h - 1, screen_buffer_array, 'X')
-    screen_buffer_array = draw_line_on_top(window_w - 1, 0, window_w, window_h - 1, screen_buffer_array, 'X')
-    screen_buffer_array = draw_line_on_top(0, window_h - 1, window_w, window_h - 1, screen_buffer_array, 'X')
+    screen_buffer_array = draw_circle_on_top(Vec2(10 + x, 10 + y), 50, 50, screen_buffer_array)
+    #screen_buffer_array = draw_triangle_on_top(Vec2(0 + x, 10 + y), Vec2(10 + x, 0 + y), Vec2(0 + x, 0 + y), screen_buffer_array, '@')
+    #screen_buffer_array = draw_line_on_top(Vec2(floor(window_w / 2), floor(window_h / 2)), Vec2(floor(mouseX / window_w), floor(mouseY / window_h)), screen_buffer_array, 'e')
+    screen_buffer_array = draw_line_on_top(Vec2(0, 0),            Vec2(window_w, 0), screen_buffer_array, 'X')
+    screen_buffer_array = draw_line_on_top(Vec2(0, 0),            Vec2(0, window_h - 1), screen_buffer_array, 'X')
+    screen_buffer_array = draw_line_on_top(Vec2(window_w - 1, 0), Vec2(window_w, window_h - 1), screen_buffer_array, 'X')
+    screen_buffer_array = draw_line_on_top(Vec2(0, window_h - 1), Vec2(window_w, window_h - 1), screen_buffer_array, 'X')
     screen_buffer = draw(screen_buffer_array)
 
     system('CLS')
